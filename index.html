@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pendo Sample App</title>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, sans-serif; margin:0; padding:2rem; background:#f9fafb;}
+    .container { max-width: 400px; margin: 0 auto; background: white; padding:2rem; border-radius:12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);}
+    .hidden { display: none; }
+    label { display:block; margin-top:1rem; font-weight:600;}
+    input { width:100%; padding:0.5rem; border:1px solid #d1d5db; border-radius:6px; margin-top:0.25rem;}
+    button { margin-top:1.5rem; width:100%; padding:0.75rem; border:none; background:#2563eb; color:white; border-radius:6px; font-weight:600; cursor:pointer;}
+    h2 { text-align:center; margin-bottom:1rem;}
+  </style>
+
+  <!-- Pendo Agent Loader -->
+  <script>
+  (function(apiKey){
+    (function(p,e,n,d,o){var v,w,x,y,z;o=p[d]=p[d]||{};o._q=o._q||[];
+    v=['initialize','identify','updateOptions','pageLoad','track'];for(w=0,x=v.length;w<x;++w)(function(m){
+        o[m]=o[m]||function(){o._q[m===v[0]?'unshift':'push']([m].concat([].slice.call(arguments,0)));};})(v[w]);
+        y=e.createElement(n);y.async=!0;y.src='https://cdn.pendo.io/agent/static/'+apiKey+'/pendo.js';
+        z=e.getElementsByTagName(n)[0];z.parentNode.insertBefore(y,z);} )(window,document,'script','pendo');
+  })('ee736340-b44a-4dc7-95bd-549958b8be86');
+  </script>
+</head>
+<body>
+
+  <!-- Login Screen -->
+  <div id="login-screen" class="container">
+    <h2>Login</h2>
+    <form id="login-form">
+      <label>Email
+        <input type="email" id="email" required>
+      </label>
+      <label>First name
+        <input type="text" id="firstName" required>
+      </label>
+      <label>Last name
+        <input type="text" id="lastName" required>
+      </label>
+      <label>Account / Company
+        <input type="text" id="accountName" required>
+      </label>
+      <button type="submit">Sign in</button>
+    </form>
+  </div>
+
+  <!-- Dashboard Screen -->
+  <div id="dashboard-screen" class="container hidden">
+    <h2>Dashboard</h2>
+    <p>Welcome, <span id="welcome-name"></span>!</p>
+    <p>Your fake authentication token has been saved in <code>localStorage</code>. Refresh to see Pendo persist the session.</p>
+    <button id="logout">Logout</button>
+  </div>
+
+<script>
+const loginScreen = document.getElementById('login-screen');
+const dashboard = document.getElementById('dashboard-screen');
+const loginForm = document.getElementById('login-form');
+const welcomeName = document.getElementById('welcome-name');
+
+function initFromStorage() {
+  const session = JSON.parse(localStorage.getItem('session') || 'null');
+  if (session && session.visitorId) {
+    showDashboard(session);
+  }
+}
+function showDashboard(session) {
+  loginScreen.classList.add('hidden');
+  dashboard.classList.remove('hidden');
+  welcomeName.textContent = session.firstName;
+  // Initialize Pendo
+  pendo.initialize({
+    visitor: {
+      id: session.visitorId,
+      email: session.email,
+      firstName: session.firstName,
+      lastName: session.lastName,
+    },
+    account: {
+      id: session.accountId,
+      accountName: session.accountName,
+      payingStatus: 'trial'
+    }
+  });
+  // Send page load and custom event example
+  pendo.pageLoad();
+  pendo.track('Dashboard Viewed');
+}
+
+loginForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const email = document.getElementById('email').value.trim();
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+  const accountName = document.getElementById('accountName').value.trim();
+  const visitorId = crypto.randomUUID();
+  const accountId = accountName.toLowerCase().replace(/\s+/g,'-') + '-' + Math.floor(Math.random()*10000);
+  const session = { email, firstName, lastName, visitorId, accountId, accountName };
+  localStorage.setItem('session', JSON.stringify(session));
+  showDashboard(session);
+});
+
+document.getElementById('logout').addEventListener('click', () => {
+  localStorage.removeItem('session');
+  location.reload();
+});
+
+initFromStorage();
+</script>
+</body>
+</html>
